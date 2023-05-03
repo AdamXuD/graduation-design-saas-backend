@@ -1,4 +1,4 @@
-from sqlalchemy import delete, insert, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 
@@ -26,9 +26,40 @@ class CRUDStudentTaskStatus(CRUDBase[StudentTaskStatus, StudentTaskStatusCreate,
             "status": "uncompleted",
             "text": "",
             "files": "[]",
-            "score": 0,
+            "score": -1,
         }) for student_id in student_ids]
         db.add_all(data)
+        await db.commit()
+
+    async def updateMultiToExpiredByTaskId(self, db: AsyncSession, task_id: int):
+        query = update(StudentTaskStatus).where(
+            StudentTaskStatus.task_id == task_id,
+            StudentTaskStatus.status != "checked"
+        ).values(status="expired")
+        await db.execute(query)
+        await db.commit()
+
+    async def updateMultiExpiredToOtherByTaskId(self, db: AsyncSession, task_id: int):
+        query = update(StudentTaskStatus).where(
+            StudentTaskStatus.task_id == task_id,
+            StudentTaskStatus.status == "expired",
+            StudentTaskStatus.score == -1,
+            ((StudentTaskStatus.text != "") | (StudentTaskStatus.files != "[]"))
+        ).values(status="completed")
+        await db.execute(query)
+        query = update(StudentTaskStatus).where(
+            StudentTaskStatus.task_id == task_id,
+            StudentTaskStatus.status == "expired",
+            StudentTaskStatus.score == -1,
+            ((StudentTaskStatus.text == "") | (StudentTaskStatus.files == "[]"))
+        ).values(status="uncompleted")
+        await db.execute(query)
+        query = update(StudentTaskStatus).where(
+            StudentTaskStatus.task_id == task_id,
+            StudentTaskStatus.status == "expired",
+            StudentTaskStatus.score != -1
+        ).values(status="checked")
+        await db.execute(query)
         await db.commit()
 
     async def getMultiByTaskId(self, db: AsyncSession, task_id: int) -> List[StudentTaskStatus]:

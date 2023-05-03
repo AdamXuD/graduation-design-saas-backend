@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String
 from sqlalchemy.dialects.mysql import INTEGER
 
-from db.base_class import Base
+from models.base_class import Base
 
 
 class Profession(Base):

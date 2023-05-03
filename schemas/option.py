@@ -18,7 +18,7 @@ class OptionUpdate(OptionBase):
 
 # Properties shared by models stored in DB
 class OptionInDBBase(OptionBase):
-    pass
+    key: str
 
     class Config:
         orm_mode = True
@@ -26,9 +26,10 @@ class OptionInDBBase(OptionBase):
 
 # Properties to return to client
 class Option(OptionInDBBase):
-    key: str
+    pass
 
 
 # Properties properties stored in DB
 class OptionInDB(OptionInDBBase):
+    id: int
     key: str

@@ -1,30 +1,60 @@
-import json
+import ujson
 import time
+from typing import List, Optional
+from pydantic import BaseModel
 from redis.asyncio import Redis
 from fastapi import APIRouter, Body, Depends, HTTPException
 
+import schemas
 from api import deps
-from core.classroom import ClassroomAlreadyOpenError, ClassroomNotOpenError, ClassroomQRCodeInvaildError, ClassroomRecordDecodeError, appendClassroomAttendance, appendClassroomEnd, getClassroomAttendanceQRCode, getClassroomRecord, createClassroom, deleteClassroom, appendClassroomRoll, verifyClassroomAttendanceQRCode
-from core.dynamic import boardcastDynamicToLesson, sendDynamicToStudent, sendDynamicToTeacher
+from core.classroom import (
+    ClassroomAlreadyOpenError,
+    ClassroomNotOpenError,
+    ClassroomQRCodeInvaildError,
+    ClassroomRecordDecodeError,
+    appendClassroomAttendance,
+    appendClassroomEnd,
+    getClassroomAttendanceQRCode,
+    getClassroomRecord,
+    createClassroom,
+    deleteClassroom,
+    appendClassroomRoll,
+    verifyClassroomAttendanceQRCode
+)
+from core.dynamic import (
+    boardcastDynamicToLesson,
+    sendDynamicToStudent,
+    sendDynamicToTeacher
+)
 from crud.crud_lesson import lesson
 from crud.crud_teacher import teacher
 from crud.crud_task import task
 from crud.crud_student import student
 from crud.crud_lr import lessonRecord
 from crud.crud_sts import studentTaskStatus
-from crud.crud_class import theClass
+from crud.crud_class import class_
 from crud.crud_option import option
-from schemas.lesson_record import LessonRecordCreate
-from schemas.student_task_status import StudentTaskStatus, StudentTaskStatusUpdate
-from schemas.task import Task, TaskCreate, TaskUpdate
-from schemas.lesson import Lesson, LessonBrief
-from schemas.teacher import Teacher
 
 
 lesson_router = r = APIRouter()
 
 
-@r.get("")
+class LessonsReturn(BaseModel):
+    lessons: List[schemas.LessonBrief]
+    semester: dict
+
+
+class LessonDetailReturn(BaseModel):
+    lesson: schemas.Lesson
+    teacher: schemas.Teacher
+
+
+class LessonTaskReturn(BaseModel):
+    tasks: List[schemas.Task]
+    statuses: Optional[List[schemas.StudentTaskStatus]]
+
+
+@r.get("", response_model=LessonsReturn)
 async def getLessons(
     db=Depends(deps.getDB),
     currentUser=Depends(deps.getCurrentUserAndScope),
@@ -39,10 +69,10 @@ async def getLessons(
         raise HTTPException(status_code=403, detail="Forbidden")
 
     semester = await option.getSemester(db)
-    return {"lessons": [LessonBrief.from_orm(l) for l in ls], "semester": semester}
+    return {"lessons": ls, "semester": semester}
 
 
-@r.get("/{lesson_id}")
+@r.get("/{lesson_id}", response_model=LessonDetailReturn)
 async def getLessonDetail(
     lesson_id: int,
     db=Depends(deps.getDB),
@@ -65,10 +95,10 @@ async def getLessonDetail(
 
     l = await lesson.get(db, lesson_id)
     t = await teacher.get(db, l.teacher_id)
-    return {"lesson": Lesson.from_orm(l), "teacher": Teacher.from_orm(t)}
+    return {"lesson": l, "teacher": t}
 
 
-@r.get("/{lesson_id}/task")
+@r.get("/{lesson_id}/task", response_model=LessonTaskReturn)
 async def getLessonTask(
     lesson_id: int,
     db=Depends(deps.getDB),
@@ -84,7 +114,7 @@ async def getLessonTask(
                 status_code=403, detail="You are not the teacher of this lesson")
 
         ts = await task.getMultiByLessonId(db, lesson_id)
-        return {"tasks": [Task.from_orm(t) for t in ts]}
+        return {"tasks": ts}
     elif scope == "student":
         hasLesson = await lesson.isClassHasLesson(db, user.class_id, lesson_id)
 
@@ -94,10 +124,7 @@ async def getLessonTask(
 
         ts = await task.getMultiByLessonId(db, lesson_id)
         sts = await task.getMultiStatusByTaskIds(db, [t.id for t in ts], user.id)
-        return {
-            "tasks": [Task.from_orm(t) for t in ts],
-            "status": [StudentTaskStatus.from_orm(st) for st in sts]
-        }
+        return {"tasks": ts, "statuses": sts}
     else:
         raise HTTPException(status_code=403, detail="Forbidden")
 
@@ -106,7 +133,7 @@ async def getLessonTask(
 async def putTaskStatus(
     lesson_id: int,
     task_id: int,
-    statusUpdate: StudentTaskStatusUpdate = Body(alias="status"),
+    statusUpdate: schemas.StudentTaskStatusUpdate = Body(),
     db=Depends(deps.getDB),
     currentUser=Depends(deps.getCurrentUserAndScope),
 ):
@@ -116,7 +143,7 @@ async def putTaskStatus(
         raise HTTPException(
             status_code=403, detail="You are not the student of this lesson")
 
-    if await studentTaskStatus.isStudentHasTaskStatus(db, user.id, task_id):
+    if not await studentTaskStatus.isStudentHasTaskStatus(db, user.id, task_id):
         raise HTTPException(
             status_code=403, detail="You don't have this task")
 
@@ -124,22 +151,15 @@ async def putTaskStatus(
     t = await task.get(db, task_id)
     if ts.status == "uncompleted":
         l = await lesson.get(db, lesson_id)
-        await sendDynamicToTeacher(db, l.teacher_id, f"{user.name} 完成了任务 {t.title}，请老师及时批改。")
+        await sendDynamicToTeacher(db, l.teacher_id, lesson_id, f"{user.name} 完成了任务 {t.title}，请老师及时批改。")
 
     if ts.status == "checked":
         raise HTTPException(
             status_code=403, detail="You cannot modify a checked task")
 
-    if t.deadline < time.time():
-        await studentTaskStatus.update(
-            db, db_obj=ts,
-            obj_in={
-                **statusUpdate.dict(),
-                "status": "expired"
-            }
-        )
+    if ts.status == "expired":
         raise HTTPException(
-            status_code=403, detail="You cannot modify a task after deadline")
+            status_code=403, detail="You cannot modify a checked task")
 
     await studentTaskStatus.update(
         db, db_obj=ts,
@@ -149,14 +169,12 @@ async def putTaskStatus(
         }
     )
 
-    return {"status": statusUpdate}
-
 
 @r.put("/{lesson_id}/task/{task_id}")
 async def putTask(
     lesson_id: int,
     task_id: int,
-    taskUpdate: TaskUpdate = Body(alias="task"),
+    taskUpdate: schemas.TaskUpdate = Body(),
     db=Depends(deps.getDB),
     currentUser=Depends(deps.getCurrentUserAndScope),
 ):
@@ -166,19 +184,42 @@ async def putTask(
         raise HTTPException(
             status_code=403, detail="You are not the teacher of this lesson")
 
-    if await task.isTeacherHasTask(db, task_id, lesson_id):
+    if not await task.isTeacherHasTask(db, user.id, lesson_id):
+        raise HTTPException(
+            status_code=403, detail="You don't have permission to edit this task")
+
+    t = await task.update(db, db_obj=await task.get(db, task_id), obj_in=taskUpdate)
+    if taskUpdate.deadline > int(time.time()):
+        await studentTaskStatus.updateMultiExpiredToOtherByTaskId(db, task_id)
+    await boardcastDynamicToLesson(db, lesson_id, f"任务 {t.title} 已更新，请及时完成。")
+
+
+@r.put("/{lesson_id}/task/{task_id}/end")
+async def putTaskStatusEnd(
+    lesson_id: int,
+    task_id: int,
+    db=Depends(deps.getDB),
+    currentUser=Depends(deps.getCurrentUserAndScope),
+):
+    user, scope = currentUser
+
+    if scope != "teacher" and not await lesson.isTeacherHasLesson(db, user.id, lesson_id):
+        raise HTTPException(
+            status_code=403, detail="You are not the teacher of this lesson")
+
+    if not await task.isTeacherHasTask(db, user.id, lesson_id):
         raise HTTPException(
             status_code=403, detail="You don't have permission to edit this task")
 
     t = await task.get(db, task_id)
-    await task.update(db, db_obj=t, obj_in=taskUpdate)
-    await boardcastDynamicToLesson(db, lesson_id, f"任务 {t.title} 已更新，请及时完成。")
+    await studentTaskStatus.updateMultiToExpiredByTaskId(db, task_id)
+    await boardcastDynamicToLesson(db, lesson_id, f"任务 {t.title} 已被老师截止提交。")
 
 
 @r.post("/{lesson_id}/task")
 async def postTask(
     lesson_id: int,
-    taskCreate: TaskCreate = Body(alias="task"),
+    taskCreate: schemas.TaskCreate = Body(),
     db=Depends(deps.getDB),
     currentUser=Depends(deps.getCurrentUserAndScope),
 ):
@@ -193,13 +234,12 @@ async def postTask(
         "lesson_id": lesson_id,
         "created_time": int(time.time())
     })
-    class_ids = [theClass.id for theClass in await theClass.getMultiByLessonId(db, lesson_id)]
+    class_ids = [theClass.id for theClass in await class_.getMultiByLessonId(db, lesson_id)]
     student_ids = []
     for class_id in class_ids:
         student_ids += [student.id for student in await student.getMultiByClassId(db, class_id)]
     await studentTaskStatus.insertMultiByStudentIdsAndTaskId(db, student_ids, t.id)
     await boardcastDynamicToLesson(db, lesson_id, f"老师布置了新任务 {t.title}，请及时完成。")
-    return {"task": t}
 
 
 @r.delete("/{lesson_id}/task/{task_id}")
@@ -215,7 +255,7 @@ async def deleteTask(
         raise HTTPException(
             status_code=403, detail="You are not the teacher of this lesson")
 
-    if await task.isTeacherHasTask(db, task_id, lesson_id):
+    if not await task.isTeacherHasTask(db, user.id, lesson_id):
         raise HTTPException(
             status_code=403, detail="You don't have permission to delete this task")
 
@@ -229,7 +269,7 @@ async def deleteTask(
     await boardcastDynamicToLesson(db, lesson_id, f"老师删除了任务 {t.title} ，请及时确认。")
 
 
-@r.get("/{lesson_id}/task/{task_id}/status-checking")
+@r.get("/{lesson_id}/task/{task_id}/status-checking", response_model=List[schemas.StudentTaskStatus])
 async def getTaskStatusChecking(
     lesson_id: int,
     task_id: int,
@@ -242,12 +282,12 @@ async def getTaskStatusChecking(
         raise HTTPException(
             status_code=403, detail="You are not the teacher of this lesson")
 
-    if await task.isTeacherHasTask(db, task_id, lesson_id):
+    if not await task.isTeacherHasTask(db, user.id, lesson_id):
         raise HTTPException(
             status_code=403, detail="You don't have permission to check this task")
 
     sts = await studentTaskStatus.getMultiByTaskId(db, task_id)
-    return {"status": sts}
+    return sts
 
 
 @r.put("/{lesson_id}/task/{task_id}/status-checking")
@@ -395,14 +435,13 @@ async def putClassroomEnd(
         await deleteClassroom(redis, lesson_id)
         raise HTTPException(
             status_code=400, detail="Classroom record is broken")
-    await lessonRecord.create(db, obj_in=LessonRecordCreate(**{
+    await lessonRecord.create(db, obj_in={
         "lesson_id": lesson_id,
         "time": int(time.time()),
-        "data": json.dumps(classroom)
-    }))
+        "data": ujson.dumps(classroom)
+    })
     await deleteClassroom(redis, lesson_id)
     await boardcastDynamicToLesson(db, lesson_id, f"老师结束了上课。")
-    return {"classroom": classroom}
 
 
 @r.put("/{lesson_id}/classroom/attendance")
@@ -432,8 +471,6 @@ async def putClassroomAttendance(
         await deleteClassroom(redis, lesson_id)
         raise HTTPException(
             status_code=400, detail="Classroom record is broken")
-
-    return
 
 
 @r.get("/{lesson_id}/classroom/roll")

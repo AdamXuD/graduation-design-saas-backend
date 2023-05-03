@@ -2,7 +2,7 @@ from sqlalchemy import Column, ForeignKey, String, Text
 from sqlalchemy.dialects.mysql import BIGINT, INTEGER
 from sqlalchemy.orm import relationship
 
-from db.base_class import Base
+from models.base_class import Base
 from models.lesson import Lesson
 
 

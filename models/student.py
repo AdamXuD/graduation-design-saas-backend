@@ -1,8 +1,8 @@
 from sqlalchemy import Column, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
 
-from db.base_class import Base
-from models.the_class import Class
+from models.base_class import Base
+from models.class_ import Class
 
 
 class Student(Base):
@@ -10,7 +10,7 @@ class Student(Base):
 
     id = Column(String(10), primary_key=True)
     name = Column(String(16), nullable=False)
-    class_id = Column(ForeignKey('the_class.id', onupdate='CASCADE'),
+    class_id = Column(ForeignKey('class.id', onupdate='CASCADE'),
                       nullable=False, index=True)
     email = Column(String(255), nullable=False)
     phone = Column(String(16), nullable=False)

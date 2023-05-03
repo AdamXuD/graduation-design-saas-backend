@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 # Shared properties
 class AdminBase(BaseModel):
+    id: str
     name: str
     phone: str
     email: str
@@ -12,17 +13,17 @@ class AdminBase(BaseModel):
 
 # Properties to receive on item creation
 class AdminCreate(AdminBase):
-    password: str
+    pass
 
 
 # Properties to receive on item update
 class AdminUpdate(AdminBase):
-    pass
+    reset_password: bool
 
 
 # Properties shared by models stored in DB
 class AdminInDBBase(AdminBase):
-    id: str
+    pass
 
     class Config:
         orm_mode = True

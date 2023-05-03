@@ -4,7 +4,7 @@ from sqlalchemy import Column, ForeignKey, Text
 from sqlalchemy.dialects.mysql import INTEGER
 from sqlalchemy.orm import relationship
 
-from db.base_class import Base
+from models.base_class import Base
 
 
 class LessonRecord(Base):

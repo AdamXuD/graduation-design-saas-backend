@@ -1,7 +1,11 @@
 from redis.asyncio import ConnectionPool, Redis
 
-# TODO 待反常量化
-pool = ConnectionPool(host='localhost', port=6379, db=0)
+from core.config import settings
+
+
+pool = ConnectionPool.from_url(
+    settings.REDIS_URI,
+)
 
 
 def SessionRedis() -> Redis:

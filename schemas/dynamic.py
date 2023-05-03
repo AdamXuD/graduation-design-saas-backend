@@ -3,6 +3,7 @@
 from pydantic import BaseModel
 
 
+# Shared properties
 class DynamicBase(BaseModel):
     lesson_id: int
     content: str
@@ -11,10 +12,12 @@ class DynamicBase(BaseModel):
     user_id: str
 
 
+# Properties to receive on item creation
 class DynamicUpdate(DynamicBase):
-    id: int
+    pass
 
 
+# Properties to receive on item update
 class DynamicCreate(DynamicBase):
     pass
 

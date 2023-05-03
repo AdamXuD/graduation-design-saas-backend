@@ -1,16 +1,12 @@
 import jwt
-from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 
-oauth2Scheme = OAuth2PasswordBearer(tokenUrl="/api/token")
+from core.config import settings
 
 pwdContext = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# TODO
-SECRET_KEY = "secret"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 240
 
 
 def getPasswordHash(password: str) -> str:
@@ -26,7 +22,9 @@ def createAccessToken(*, data: dict, expiresDelta: timedelta = None):
     if expiresDelta:
         expire = datetime.utcnow() + expiresDelta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.utcnow() + timedelta(
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
     toEncode.update({"exp": expire})
-    encodedJwt = jwt.encode(toEncode, SECRET_KEY, algorithm=ALGORITHM)
+    encodedJwt = jwt.encode(toEncode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encodedJwt

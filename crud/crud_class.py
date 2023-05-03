@@ -5,8 +5,8 @@ from sqlalchemy import func, select
 
 from crud.base import CRUDBase
 from models.class_lesson_relation import ClassLessonRelation
-from models.the_class import Class
-from schemas.the_class import ClassCreate, ClassUpdate
+from models.class_ import Class
+from schemas.class_ import ClassCreate, ClassUpdate
 
 
 class CRUDClass(CRUDBase[Class, ClassCreate, ClassUpdate]):
@@ -43,4 +43,4 @@ class CRUDClass(CRUDBase[Class, ClassCreate, ClassUpdate]):
         return (await db.execute(paginateQuery)).scalars().all(), (await db.execute(totalQuery)).scalar()
 
 
-theClass = CRUDClass(Class)
+class_ = CRUDClass(Class)

@@ -1,6 +1,6 @@
 from core import security
 from models.class_lesson_relation import ClassLessonRelation
-from models.the_class import Class
+from models.class_ import Class
 from schemas.student import StudentCreate, StudentUpdate
 from typing import List, Optional
 

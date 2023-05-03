@@ -4,10 +4,6 @@ from pydantic import BaseModel
 
 
 class CloudShareBase(BaseModel):
-    id: int
-    key: str
-    type: str
-    name: str
     path: str
     expire: int
 
@@ -22,7 +18,10 @@ class CloudShareCreate(CloudShareBase):
 
 # Properties shared by models stored in DB
 class CloudShareInDBBase(CloudShareBase):
-    pass
+    id: int
+    key: str
+    type: str
+    name: str
 
     class Config:
         orm_mode = True

@@ -5,17 +5,13 @@ from pydantic import BaseModel
 
 from api import deps
 from core import security
+from core.config import settings
 from crud.crud_admin import admin
 from crud.crud_student import student
 from crud.crud_teacher import teacher
 
 
 auth_router = r = APIRouter()
-
-# secrets.token_urlsafe(32)
-SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 240
 
 
 class Token(BaseModel):
@@ -42,7 +38,7 @@ async def login(db=Depends(deps.getDB), formData: OAuth2PasswordRequestForm = De
             headers={"WWW-Authenticate": "Bearer"},
         )
     accessTokenExpires = timedelta(
-        minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
     accessToken = security.createAccessToken(
         data={"username": username, "scope": role},

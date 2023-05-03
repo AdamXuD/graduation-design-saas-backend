@@ -1,122 +1,191 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional, Union
+from fastapi import APIRouter, Body, Depends, HTTPException, status
+from pydantic import BaseModel
 
+import schemas
 from api import deps
 from core.security import getPasswordHash, verifyPassword
-from crud.crud_class import theClass
+from crud.crud_class import class_
 from crud.crud_profession import profession
 from crud.crud_student import student
 from crud.crud_teacher import teacher
 from crud.crud_admin import admin
 from crud.crud_dynamic import dynamic
-from schemas.admin import Admin
-from schemas.teacher import Teacher
-from schemas.student import Student
+from crud.crud_lesson import lesson
+from crud.crud_task import task
 
 
 public_router = r = APIRouter()
 
 
-@r.get("/personal-info")
+class TaskWithLessonTitle(schemas.Task):
+    lesson_title: str
+
+
+class DynamicWithLessonTitle(schemas.Dynamic):
+    lesson_title: str
+
+
+class DashboardReturn(BaseModel):
+    uncompleted_lessons: List[schemas.LessonBrief]
+    uncompleted_tasks: List[TaskWithLessonTitle]
+    dynamics: List[DynamicWithLessonTitle]
+
+
+@r.get("/dashboard", response_model=DashboardReturn)
+async def getDashboard(
+    db=Depends(deps.getDB),
+    currentUser=Depends(deps.getCurrentUserAndScope),
+):
+    user, scope = currentUser
+
+    if scope == "teacher":
+        uncompletedLessons = [
+            l for l in await lesson.getMultiByTeacherId(db, user.id) if l.is_over == 0]
+        uncheckedTasks = [{
+            **t[0].to_dict(),
+            "lesson_title": t[1].title
+        } for t in await task.getMultiWithUncheckExpiredStatusByTeacherId(db, user.id)]
+        dynamics = [{
+            **item[0].to_dict(),
+            "lesson_title": item[1].title,
+        } for item in await dynamic.getMultiByUserIdAndScope(db, user.id, scope)]
+        return {
+            "uncompleted_tasks": uncheckedTasks,
+            "uncompleted_lessons": uncompletedLessons,
+            "dynamics": dynamics,
+        }
+    elif scope == "student":
+        uncompletedLessons = [
+            l for l in await lesson.getMultiByClassId(db, user.class_id) if l.is_over == 0]
+        uncompletedTasks = [{
+            **t[0].to_dict(),
+            "lesson_title": t[2].title
+        } for t in await task.getMultiByStudentId(db, user.id) if t[1].status == "uncompleted"]
+        dynamics = [{
+            **item[0].to_dict(),
+            "lesson_title": item[1].title,
+        } for item in await dynamic.getMultiByUserIdAndScope(db, user.id, scope)]
+        return {
+            "uncompleted_tasks": uncompletedTasks,
+            "uncompleted_lessons": uncompletedLessons,
+            "dynamics": dynamics,
+        }
+    elif scope == "admin":
+        return {
+            "uncompleted_tasks": [],
+            "uncompleted_lessons": [],
+            "dynamics": [],
+        }
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid request",
+        )
+
+
+class PersonalReturn(BaseModel):
+    personal: Union[schemas.Student, schemas.Teacher, schemas.Admin]
+    class_: Optional[schemas.Class]
+    profession: Optional[schemas.Profession]
+
+
+@r.get("/personal-info", response_model=PersonalReturn)
 async def getPersonalInfo(
     db=Depends(deps.getDB),
     currentUser=Depends(deps.getCurrentUserAndScope),
 ):
     user, scope = currentUser
     if scope == "student":
-        classInfo = await theClass.get(db, user.class_id)
+        classInfo = await class_.get(db, user.class_id)
         professionInfo = await profession.get(db, classInfo.profession_id)
         return {
-            "personal": Student.from_orm(user),
+            "personal": user,
             "class": classInfo,
             "profession": professionInfo
         }
     elif scope == "teacher":
-        return {"personal": Teacher.from_orm(user)}
+        return {"personal": user}
     elif scope == "admin":
-        return {"personal": Admin.from_orm(user)}
+        return {"personal": user}
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid request",
         )
+
+
+class UserInfoUpdate(BaseModel):
+    email: str
+    phone: str
+    introduction: str
+    avatar: str
 
 
 @r.put("/personal-info")
 async def updatePersonalInfo(
-    data: dict,
+    info: UserInfoUpdate = Body(),
     db=Depends(deps.getDB),
     currentUser=Depends(deps.getCurrentUserAndScope),
 ):
     user, scope = currentUser
+    crudObj = None
     if scope == "student":
-        await student.update(db, db_obj=user, obj_in={
-            "email": data.get("email", user.email),
-            "phone": data.get("phone", user.phone),
-            "introduction": data.get("introduction", user.introduction),
-            "avatar": data.get("avatar", user.avatar),
-        })
+        crudObj = student
     elif scope == "teacher":
-        await teacher.update(db, db_obj=user, obj_in={
-            "email": data.get("email", user.email),
-            "phone": data.get("phone", user.phone),
-            "introduction": data.get("introduction", user.introduction),
-            "avatar": data.get("avatar", user.avatar),
-        })
+        crudObj = teacher
     elif scope == "admin":
-        await admin.update(db, db_obj=user, obj_in={
-            "email": data.get("email", user.email),
-            "phone": data.get("phone", user.phone),
-            "introduction": data.get("introduction", user.introduction),
-            "avatar": data.get("avatar", user.avatar),
-        })
+        crudObj = admin
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid request",
         )
+    await crudObj.update(db, db_obj=user, obj_in={
+        "email": info.email,
+        "phone": info.phone,
+        "introduction": info.introduction,
+        "avatar": info.avatar,
+    })
+
+
+class PasswordUpdate(BaseModel):
+    old_password: str
+    new_password: str
 
 
 @r.put("/password")
 async def updatePassword(
-    data: dict,
+    data: PasswordUpdate = Body(),
     db=Depends(deps.getDB),
     currentUser=Depends(deps.getCurrentUserAndScope),
 ):
     user, scope = currentUser
 
-    oldPassword = data.get("old_password", None)
-    newPassword = data.get("new_password", None)
-    if oldPassword is None or newPassword is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid request",
-        )
-    if not verifyPassword(oldPassword, user.hashed_password):
+    if not verifyPassword(data.old_password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Wrong old password",
         )
+    crudObj = None
     if scope == "student":
-        await student.update(db, db_obj=user, obj_in={
-            "hashed_password": getPasswordHash(newPassword),
-        })
+        crudObj = student
     elif scope == "teacher":
-        await teacher.update(db, db_obj=user, obj_in={
-            "hashed_password": getPasswordHash(newPassword),
-        })
+        crudObj = teacher
     elif scope == "admin":
-        await admin.update(db, db_obj=user, obj_in={
-            "hashed_password": getPasswordHash(newPassword),
-        })
+        crudObj = admin
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid request",
         )
+    await crudObj.update(db, db_obj=user, obj_in={
+        "hashed_password": getPasswordHash(data.new_password),
+    })
 
 
-@r.get("/dynamic")
-async def getDynamic(
+@r.get("/dynamic/list", response_model=List[DynamicWithLessonTitle])
+async def getDynamics(
     db=Depends(deps.getDB),
     currentUser=Depends(deps.getCurrentUserAndScope),
 ):
@@ -127,4 +196,4 @@ async def getDynamic(
         "lesson_title": item[1].title,
     } for item in await dynamic.getMultiByUserIdAndScope(db, user.id, scope)]
 
-    return {"dynamics": dynamics}
+    return dynamics

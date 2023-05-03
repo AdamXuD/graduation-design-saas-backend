@@ -2,7 +2,7 @@ from sqlalchemy import Column
 from sqlalchemy import Column, String, Text
 from sqlalchemy.dialects.mysql import INTEGER
 
-from db.base_class import Base
+from models.base_class import Base
 
 
 class Option(Base):

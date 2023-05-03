@@ -1,11 +1,14 @@
 import aioboto3
 
+from core.config import settings
+
+session = aioboto3.Session()
+
 
 def SessionOSS():
-    session = aioboto3.Session()
     return session.client(
         's3',
-        endpoint_url="http://127.0.0.1:9000",
-        aws_access_key_id="minioadmin",
-        aws_secret_access_key="minioadmin",
+        endpoint_url=settings.S3_API_ENDPOINT,
+        aws_access_key_id=settings.S3_API_ACCESS_KEY,
+        aws_secret_access_key=settings.S3_API_SECRET_KEY,
     )

@@ -2,7 +2,7 @@ import time
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from crud.crud_dynamic import dynamic
-from crud.crud_class import theClass
+from crud.crud_class import class_
 from crud.crud_student import student
 
 
@@ -41,7 +41,7 @@ async def boardcastDynamicToLesson(
     lesson_id: int,
     content: str,
 ):
-    class_ids = [theClass.id for theClass in await theClass.getMultiByLessonId(db, lesson_id)]
+    class_ids = [theClass.id for theClass in await class_.getMultiByLessonId(db, lesson_id)]
     student_ids = []
     for class_id in class_ids:
         student_ids += [student.id for student in await student.getMultiByClassId(db, class_id)]

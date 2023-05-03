@@ -1,14 +1,17 @@
-from sqlalchemy import Column, ForeignKey, String, Text
+from sqlalchemy import Column, ForeignKey, Index, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.mysql import INTEGER
 
-from db.base_class import Base
+from models.base_class import Base
 from models.student import Student
 from models.task import Task
 
 
 class StudentTaskStatus(Base):
     __tablename__ = 'student_task_status'
+    __table_args__ = (
+        Index("student_id", "student_id", "task_id", unique=True),
+    )
 
     id = Column(INTEGER(11), primary_key=True)
     student_id = Column(ForeignKey('student.id', ondelete='CASCADE',
