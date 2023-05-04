@@ -29,7 +29,7 @@ async def getObjectStream(
         item for item in re.split(r"[/|\\]+", path) if item != ""
     ]
     filename = pathList[-1]
-    path = "/".join([area, user_id] + pathList)
+    path = "/".join([area, str(user_id)] + pathList)
 
     resp = await oss.list_objects_v2(
         Bucket=bucket,
@@ -58,7 +58,7 @@ async def getObjectList(
     pathList = [
         item for item in re.split(r"[/|\\]+", path) if item != ""
     ]
-    prefix = "/".join([area, user_id] + pathList) + "/"
+    prefix = "/".join([area, str(user_id)] + pathList) + "/"
 
     resp = await oss.list_objects_v2(
         Bucket=bucket,
@@ -103,7 +103,7 @@ async def deleteObjects(
 
     objects = []
     for name in names:
-        pathPrefix = "/".join([area, user_id] + pathList + [name])
+        pathPrefix = "/".join([area, str(user_id)] + pathList + [name])
         resp = await oss.list_objects_v2(
             Bucket=bucket,
             Prefix=pathPrefix,
@@ -139,7 +139,7 @@ async def putObjects(
     dstList = [item for item in re.split(r"[/|\\]+", dst) if item != ""]
 
     for file in files:
-        fileKey = "/".join([area, user_id] + dstList + [file.filename])
+        fileKey = "/".join([area, str(user_id)] + dstList + [file.filename])
         resp = await oss.list_objects_v2(
             Bucket=bucket,
             Prefix=fileKey,
@@ -236,8 +236,8 @@ async def moveObjects(
     dstPathList = [
         item for item in re.split(r"[/|\\]+", dst_path) if item != ""
     ]
-    srcPathPrefix = "/".join([area, user_id] + srcPathList)
-    dstPathPrefix = "/".join([area, user_id] + dstPathList)
+    srcPathPrefix = "/".join([area, str(user_id)] + srcPathList)
+    dstPathPrefix = "/".join([area, str(user_id)] + dstPathList)
 
     for name in names:
         srcKey = f"{srcPathPrefix}/{name}"
@@ -271,8 +271,8 @@ async def copyObjects(
     dstPathList = [
         item for item in re.split(r"[/|\\]+", dst_path) if item != ""
     ]
-    srcPathPrefix = "/".join([area, user_id] + srcPathList)
-    dstPathPrefix = "/".join([area, user_id] + dstPathList)
+    srcPathPrefix = "/".join([area, str(user_id)] + srcPathList)
+    dstPathPrefix = "/".join([area, str(user_id)] + dstPathList)
 
     for name in names:
         srcKey = f"{srcPathPrefix}/{name}"
@@ -301,7 +301,7 @@ async def renameObject(
     user_id: Union[str, int]
 ):
     pathList = [item for item in re.split(r"[/|\\]+", path) if item != ""]
-    pathPrefix = "/".join([area, user_id] + pathList)
+    pathPrefix = "/".join([area, str(user_id)] + pathList)
 
     srcKey = f"{pathPrefix}/{old_name}"
     dstKey = f"{pathPrefix}/{new_name}"
@@ -329,7 +329,7 @@ async def getShareFilePathAndType(
     pathList = [
         item for item in re.split(r"[/|\\]+", path) if item != ""
     ]
-    path = "/".join([area, user_id] + pathList)
+    path = "/".join([area, str(user_id)] + pathList)
 
     resp = await oss.list_objects_v2(
         Bucket=bucket,
@@ -362,7 +362,7 @@ async def recvShareFile(
     dstPathList = [
         item for item in re.split(r"[/|\\]+", dst_path) if item != ""
     ]
-    dst_path = "/".join([area, user_id] + dstPathList + [name])
+    dst_path = "/".join([area, str(user_id)] + dstPathList + [name])
 
     srcResp = await oss.list_objects_v2(
         Bucket=bucket,
