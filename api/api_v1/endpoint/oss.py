@@ -60,7 +60,7 @@ async def putHomeworkObject(
         file.filename = f"{user.id}-{randomString()}.{ext}"
         ret.append({
             "filename": file.filename,
-            "url": f"{settings.S3_API_ENDPOINT}/public/homework/{task_id}/{file.filename}"
+            "url": f"{settings.S3_PUBLIC_ENDPOINT}/public/homework/{task_id}/{file.filename}"
         })
 
     try:
@@ -117,7 +117,7 @@ async def putCoursewareObject(
         file.filename = f"{user.id}-{randomString()}.{ext}"
         ret.append({
             "filename": file.filename,
-            "url": f"{settings.S3_API_ENDPOINT}/public/courseware/{lesson_id}/{file.filename}"
+            "url": f"{settings.S3_PUBLIC_ENDPOINT}/public/courseware/{lesson_id}/{file.filename}"
         })
 
     try:

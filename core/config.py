@@ -44,6 +44,7 @@ class Settings(BaseSettings):
             return v
         return f"redis://{values['REDIS_USER']}:{values['REDIS_PASSWORD']}@{values['REDIS_SERVER']}/{values['REDIS_DB']}"
 
+    S3_PUBLIC_ENDPOINT: str
     S3_API_ENDPOINT: str
     S3_API_ACCESS_KEY: str
     S3_API_SECRET_KEY: str
