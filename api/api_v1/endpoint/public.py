@@ -1,6 +1,6 @@
 from typing import List, Optional, Union
 from fastapi import APIRouter, Body, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 
 import schemas
 from api import deps
@@ -150,8 +150,8 @@ async def updatePersonalInfo(
 
 
 class PasswordUpdate(BaseModel):
-    old_password: str
-    new_password: str
+    old_password: constr(min_length=6, max_length=32)
+    new_password: constr(min_length=6, max_length=32)
 
 
 @r.put("/password")

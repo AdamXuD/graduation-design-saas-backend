@@ -2,7 +2,7 @@ from core import security
 from models.class_lesson_relation import ClassLessonRelation
 from models.class_ import Class
 from schemas.student import StudentCreate, StudentUpdate
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, select
@@ -20,7 +20,7 @@ class CRUDStudent(CRUDBase[Student, StudentCreate, StudentUpdate]):
             return None
         return student
 
-    async def getRandomStudentsByLessonId(self, db: AsyncSession, lesson_id: int, count: int = 1) -> List[Student]:
+    async def getRandomStudentsByLessonId(self, db: AsyncSession, lesson_id: int, count: int = 1) -> Optional[List[Student]]:
         query = select(
             Student
         ).join(
@@ -35,7 +35,7 @@ class CRUDStudent(CRUDBase[Student, StudentCreate, StudentUpdate]):
 
         return (await db.execute(query)).scalars().all()
 
-    async def getMultiByClassId(self, db: AsyncSession, class_id: int) -> List[Student]:
+    async def getMultiByClassId(self, db: AsyncSession, class_id: int) -> Optional[List[Student]]:
         query = select(
             Student
         ).where(
@@ -48,7 +48,7 @@ class CRUDStudent(CRUDBase[Student, StudentCreate, StudentUpdate]):
             db: AsyncSession,
             keyword: Optional[str] = None,
             offset: int = 0,
-            limit: int = 10) -> list[Student]:
+            limit: int = 10) -> Optional[Tuple[List[Student], int]]:
         if keyword == None or keyword == "":
             baseQuery = select(
                 Student

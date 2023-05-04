@@ -286,8 +286,7 @@ async def getTaskStatusChecking(
         raise HTTPException(
             status_code=403, detail="You don't have permission to check this task")
 
-    sts = await studentTaskStatus.getMultiByTaskId(db, task_id)
-    return sts
+    return await studentTaskStatus.getMultiByTaskId(db, task_id)
 
 
 @r.put("/{lesson_id}/task/{task_id}/status-checking")
@@ -387,6 +386,55 @@ async def getClassroom(
         except ClassroomNotOpenError:
             qrcode = None
         return {"classroom": classroom, "qrcode": qrcode}
+
+
+@r.get("/{lesson_id}/classroom/pre-data")
+async def getClassroomPreData(
+    lesson_id: int,
+    db=Depends(deps.getDB),
+    currentUser=Depends(deps.getCurrentUserAndScope),
+):
+    user, scope = currentUser
+
+    if scope == "teacher" and not await lesson.isTeacherHasLesson(db, user.id, lesson_id):
+        raise HTTPException(
+            status_code=403, detail="You are not the teacher of this lesson")
+    elif scope == "student" and not await lesson.isClassHasLesson(db, user.class_id, lesson_id):
+        raise HTTPException(
+            status_code=403, detail="You are not the student of this lesson")
+
+    classes = await class_.getMultiByLessonId(db, lesson_id)
+    students = []
+    for c in classes:
+        students += [
+            schemas.Student.from_orm(student) for student in await student.getMultiByClassId(db, c.id)
+        ]
+    historys = await lessonRecord.getMultiByLessonId(db, lesson_id)
+    return {"classes": classes, "students": students, "histories": historys}
+
+
+@r.get("/{lesson_id}/classroom/history/{history_id}")
+async def getClassroomHistory(
+    lesson_id: int,
+    history_id: int,
+    db=Depends(deps.getDB),
+    currentUser=Depends(deps.getCurrentUserAndScope),
+):
+    user, scope = currentUser
+
+    if scope == "teacher" and not await lesson.isTeacherHasLesson(db, user.id, lesson_id):
+        raise HTTPException(
+            status_code=403, detail="You are not the teacher of this lesson")
+    elif scope == "student" and not await lesson.isClassHasLesson(db, user.class_id, lesson_id):
+        raise HTTPException(
+            status_code=403, detail="You are not the student of this lesson")
+
+    h = await lessonRecord.get(db, id=history_id)
+    if h.lesson_id != lesson_id:
+        raise HTTPException(
+            status_code=403, detail="This history is not belong to this lesson")
+
+    return {"history": h}
 
 
 @r.put("/{lesson_id}/classroom/classbegin")

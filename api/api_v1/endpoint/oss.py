@@ -2,7 +2,7 @@ import random
 import string
 import time
 from typing import List, Union
-from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Path, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -43,7 +43,7 @@ class PublicFileUploadReturn(BaseModel):
 
 @r.put("/public/homework/{task_id}", response_model=List[PublicFileUploadReturn])
 async def putHomeworkObject(
-    task_id: str,
+    task_id: int = Path(ge=1),
     files: List[UploadFile] = File(),
     db=Depends(deps.getDB),
     oss=Depends(deps.getOSS),
@@ -74,7 +74,7 @@ async def putHomeworkObject(
 
 @r.delete("/public/homework/{task_id}")
 async def deleteHomeworkObject(
-    task_id: str,
+    task_id: int = Path(ge=1),
     filenames: List[str] = Body(),
     db=Depends(deps.getDB),
     oss=Depends(deps.getOSS),
@@ -100,7 +100,7 @@ async def deleteHomeworkObject(
 
 @ r.put("/public/courseware/{lesson_id}", response_model=List[PublicFileUploadReturn])
 async def putCoursewareObject(
-    lesson_id: str,
+    lesson_id: int = Path(ge=1),
     files: List[UploadFile] = File(),
     db=Depends(deps.getDB),
     oss=Depends(deps.getOSS),
@@ -131,7 +131,7 @@ async def putCoursewareObject(
 
 @ r.delete("/public/courseware/{lesson_id}")
 async def deleteCoursewareObject(
-    lesson_id: str,
+    lesson_id: int = Path(ge=1),
     filenames: List[str] = Body(),
     db=Depends(deps.getDB),
     oss=Depends(deps.getOSS),
@@ -359,7 +359,6 @@ async def copyCloudObjects(
 async def getSharedCloudObjects(
     share_id: str = Query(),
     db=Depends(deps.getDB),
-    oss=Depends(deps.getOSS),
     currentUser=Depends(deps.getCurrentUserAndScope)
 ):
     user, scope = currentUser

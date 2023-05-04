@@ -32,7 +32,7 @@ if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=3000, reload=True)
 
 
-# TODO 待测试
-# 1. lesson公告系统的增删存在bug 是前端的问题
-# 2. lesson课件全屏存在bug
-# 3. 可发布
+# TODO 待实现
+# 1. 初始化部分中，需要将public桶中的权限开放给所有人
+# 2. 需要写docker-compose文件，并尝试部署到洛杉矶服务器，测试延迟
+# 3. 前端部署到cloudflare pages，并测试加载速度

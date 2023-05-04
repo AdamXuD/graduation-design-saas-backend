@@ -6,15 +6,14 @@ from pydantic import BaseModel
 class LessonRecordBase(BaseModel):
     lesson_id: int
     time: int
-    data: str
 
 
 class LessonRecordUpdate(LessonRecordBase):
-    id: int
+    data: str
 
 
 class LessonRecordCreate(LessonRecordBase):
-    pass
+    data: str
 
 
 # Properties shared by models stored in DB
@@ -27,6 +26,10 @@ class LessonRecordInDBBase(LessonRecordBase):
 
 # Properties to return to client
 class LessonRecord(LessonRecordInDBBase):
+    data: str
+
+
+class LessonRecordBrief(LessonRecordInDBBase):
     pass
 
 

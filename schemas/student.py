@@ -1,12 +1,12 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, conint, constr
 
 
 class StudentBase(BaseModel):
-    id: str
-    name: str
-    class_id: str
+    id: constr(min_length=10, max_length=10)
+    name: constr(min_length=1, max_length=16)
+    class_id: conint(ge=1)
     email: str
-    phone: str
+    phone:  str
     introduction: str
     avatar: str
 

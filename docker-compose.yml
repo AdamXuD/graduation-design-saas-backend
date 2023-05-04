@@ -1,0 +1,21 @@
+version: "3"
+services:
+  backend:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    restart: always
+    container_name: school
+    image: "school/school:0.1"
+    ports:
+      - 3000:3000
+    ports:
+      - 3306:3306
+
+volumes:
+  vol:
+
+networks:
+  net:

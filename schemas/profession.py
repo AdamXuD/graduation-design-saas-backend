@@ -1,9 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 
 
 # Shared properties
 class ProfessionBase(BaseModel):
-    name: str
+    name: constr(min_length=1, max_length=24)
 
 
 # Properties to receive on item creation

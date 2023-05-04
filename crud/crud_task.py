@@ -13,7 +13,7 @@ from schemas.task import TaskCreate, TaskUpdate
 
 
 class CRUDTask(CRUDBase[Task, TaskCreate, TaskUpdate]):
-    async def getMultiByStudentId(self, db: AsyncSession, student_id: int):
+    async def getMultiByStudentId(self, db: AsyncSession, student_id: int) -> Optional[List[Task]]:
         query = select(
             Task, StudentTaskStatus, Lesson
         ).join(

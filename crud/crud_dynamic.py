@@ -1,3 +1,4 @@
+from typing import Optional, Tuple, Union
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,7 +17,7 @@ class CRUDDynamic(CRUDBase[Dynamic, DynamicCreate, DynamicUpdate]):
             content: str,
             created_time: int,
             scope: str,
-    ):
+    ) -> None:
         data = [Dynamic(**{
             "lesson_id": lesson_id,
             "content": content,
@@ -27,7 +28,7 @@ class CRUDDynamic(CRUDBase[Dynamic, DynamicCreate, DynamicUpdate]):
         db.add_all(data)
         await db.commit()
 
-    async def getMultiByUserIdAndScope(self, db: AsyncSession, user_id: str, scope: str):
+    async def getMultiByUserIdAndScope(self, db: AsyncSession, user_id: str, scope: str) -> Optional[Tuple[Dynamic, Lesson]]:
         query = select(
             Dynamic, Lesson
         ).join(

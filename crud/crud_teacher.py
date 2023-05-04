@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, select
@@ -23,7 +23,7 @@ class CRUDTeacher(CRUDBase[Teacher, TeacherCreate, TeacherUpdate]):
             db: AsyncSession,
             keyword: Optional[str] = None,
             offset: int = 0,
-            limit: int = 10) -> list[Teacher]:
+            limit: int = 10) -> Optional[Tuple[List[Teacher], int]]:
         if keyword == None or keyword == "":
             baseQuery = select(
                 Teacher

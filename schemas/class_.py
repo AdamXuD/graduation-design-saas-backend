@@ -1,11 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, conint, constr
 
 
 # Shared properties
 class ClassBase(BaseModel):
-    grade: int
-    profession_id: int
-    name: str
+    grade: conint(ge=1900, le=2100)
+    profession_id: conint(ge=1)
+    name: constr(min_length=1, max_length=32)
 
 
 # Properties to receive on item creation

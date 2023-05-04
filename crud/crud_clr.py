@@ -7,7 +7,7 @@ from crud.base import CRUDBase
 
 
 class CRUDClassLessonRelation(CRUDBase[ClassLessonRelation, None, None]):
-    async def updateLessonClasses(self, db: AsyncSession, lesson_id: int, class_ids: list[int]):
+    async def updateLessonClasses(self, db: AsyncSession, lesson_id: int, class_ids: list[int]) -> None:
         query = delete(ClassLessonRelation).where(
             ClassLessonRelation.lesson_id == lesson_id,
             ClassLessonRelation.class_id.notin_(class_ids)

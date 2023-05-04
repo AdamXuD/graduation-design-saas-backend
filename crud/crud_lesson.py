@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, select
@@ -11,7 +11,7 @@ from schemas.lesson import LessonCreate, LessonUpdate
 
 
 class CRUDLesson(CRUDBase[Lesson, LessonCreate, LessonUpdate]):
-    async def getMultiByClassId(self, db: AsyncSession, class_id: int) -> Optional[Lesson]:
+    async def getMultiByClassId(self, db: AsyncSession, class_id: int) -> Optional[List[Lesson]]:
         query = select(
             Lesson
         ).join(
@@ -21,7 +21,7 @@ class CRUDLesson(CRUDBase[Lesson, LessonCreate, LessonUpdate]):
         )
         return (await db.execute(query)).scalars().all()
 
-    async def getMultiByTeacherId(self, db: AsyncSession, teacher_id: int) -> Optional[Lesson]:
+    async def getMultiByTeacherId(self, db: AsyncSession, teacher_id: int) -> Optional[List[Lesson]]:
         query = select(
             Lesson
         ).filter(
@@ -52,7 +52,7 @@ class CRUDLesson(CRUDBase[Lesson, LessonCreate, LessonUpdate]):
             db: AsyncSession,
             keyword: Optional[str] = None,
             offset: int = 0,
-            limit: int = 10) -> list[Lesson]:
+            limit: int = 10) -> Optional[Tuple[List[Lesson], int]]:
         if keyword == None or keyword == "":
             baseQuery = select(
                 Lesson

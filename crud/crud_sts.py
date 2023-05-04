@@ -19,7 +19,7 @@ class CRUDStudentTaskStatus(CRUDBase[StudentTaskStatus, StudentTaskStatusCreate,
         )
         return (await db.execute(query)).scalars().first()
 
-    async def insertMultiByStudentIdsAndTaskId(self, db: AsyncSession, student_ids: list[int], task_id: int):
+    async def insertMultiByStudentIdsAndTaskId(self, db: AsyncSession, student_ids: list[int], task_id: int) -> None:
         data = [StudentTaskStatus(**{
             "student_id": student_id,
             "task_id": task_id,
@@ -31,7 +31,7 @@ class CRUDStudentTaskStatus(CRUDBase[StudentTaskStatus, StudentTaskStatusCreate,
         db.add_all(data)
         await db.commit()
 
-    async def updateMultiToExpiredByTaskId(self, db: AsyncSession, task_id: int):
+    async def updateMultiToExpiredByTaskId(self, db: AsyncSession, task_id: int) -> None:
         query = update(StudentTaskStatus).where(
             StudentTaskStatus.task_id == task_id,
             StudentTaskStatus.status != "checked"
@@ -39,7 +39,7 @@ class CRUDStudentTaskStatus(CRUDBase[StudentTaskStatus, StudentTaskStatusCreate,
         await db.execute(query)
         await db.commit()
 
-    async def updateMultiExpiredToOtherByTaskId(self, db: AsyncSession, task_id: int):
+    async def updateMultiExpiredToOtherByTaskId(self, db: AsyncSession, task_id: int) -> None:
         query = update(StudentTaskStatus).where(
             StudentTaskStatus.task_id == task_id,
             StudentTaskStatus.status == "expired",
@@ -70,7 +70,7 @@ class CRUDStudentTaskStatus(CRUDBase[StudentTaskStatus, StudentTaskStatusCreate,
         )
         return (await db.execute(query)).scalars().all()
 
-    async def deleteMultiByTaskId(self, db: AsyncSession, task_id: int):
+    async def deleteMultiByTaskId(self, db: AsyncSession, task_id: int) -> None:
         query = delete(StudentTaskStatus).where(
             StudentTaskStatus.task_id == task_id
         )

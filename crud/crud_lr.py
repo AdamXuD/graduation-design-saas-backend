@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -9,7 +9,7 @@ from schemas.lesson_record import LessonRecordCreate, LessonRecordUpdate
 
 
 class CRUDLessonRecord(CRUDBase[LessonRecord, LessonRecordCreate, LessonRecordUpdate]):
-    async def getMultiByLessonId(self, db: AsyncSession, lesson_id: int) -> Optional[LessonRecord]:
+    async def getMultiByLessonId(self, db: AsyncSession, lesson_id: int) -> Optional[List[LessonRecord]]:
         query = select(
             LessonRecord
         ).filter(

@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "school-backend"
+version = "0.1.0"
+description = ""
+authors = ["AdamXuD <737173634xdh@gmail.com>"]
+
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.95.1"
+uvicorn = "^0.22.0"
+pydantic = {extras = ["dotenv"], version = "^1.10.7"}
+aioboto3 = "^11.1.0"
+aiomysql = "^0.1.1"
+sqlalchemy = "^2.0.12"
+redis = "^4.5.4"
+ujson = "^5.7.0"
+pyjwt = "^2.6.0"
+passlib = "^1.7.4"
+python-multipart = "^0.0.6"
+bcrypt = "^4.0.1"
+
+[[tool.poetry.source]]
+name = "aliyun"
+url = "http://mirrors.aliyun.com/pypi/simple"
+default = true
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,6 +1,6 @@
 from typing import List, Optional, Generic, TypeVar
 from pydantic.generics import GenericModel
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
 
 import schemas
 from api import deps
@@ -35,7 +35,7 @@ async def getOption(
 
 @r.put("/option/{key}")
 async def putOption(
-    key: str,
+    key: str = Path(min_length=1, max_length=255),
     optionUpdate: schemas.OptionUpdate = Body(),
     db=Depends(deps.getDB),
 ):
@@ -67,7 +67,7 @@ async def postProfession(
 
 @r.put("/profession/{id}")
 async def putProfession(
-    id: str,
+    id: int = Path(ge=1),
     professionUpdate: schemas.ProfessionUpdate = Body(),
     db=Depends(deps.getDB),
 ):
@@ -76,7 +76,7 @@ async def putProfession(
 
 @r.delete("/profession/{id}")
 async def deleteProfession(
-    id: str,
+    id: int = Path(ge=1),
     db=Depends(deps.getDB),
 ):
     await profession.remove(db, id=id)
@@ -98,6 +98,9 @@ async def postTeacher(
     teacherCreate: schemas.TeacherCreate = Body(),
     db=Depends(deps.getDB),
 ):
+    if len(teacherCreate.id) == 0 or len(teacherCreate.name) == 0:
+        raise HTTPException(status_code=400, detail="id or name is empty")
+
     await teacher.create(db, obj_in={
         **teacherCreate.dict(),
         "hashed_password": security.getPasswordHash(teacherCreate.id),
@@ -106,10 +109,9 @@ async def postTeacher(
 
 @r.put("/teacher/{id}")
 async def putTeacher(
-    id: str,
+    id: str = Path(min_length=1, max_length=255),
     teacherUpdate: schemas.TeacherUpdate = Body(),
     db=Depends(deps.getDB),
-    currentUser=Depends(deps.getCurrentUserAndScope),
 ):
     await teacher.update(db, db_obj=await teacher.get(db, id=id), obj_in={
         **teacherUpdate.dict(exclude={"reset_password"}),
@@ -119,7 +121,7 @@ async def putTeacher(
 
 @r.delete("/teacher/{id}")
 async def deleteTeacher(
-    id: str,
+    id: str = Path(min_length=1, max_length=255),
     db=Depends(deps.getDB),
 ):
     await teacher.remove(db, id=id)
@@ -149,7 +151,7 @@ async def postStudent(
 
 @r.put("/student/{id}")
 async def putStudent(
-    id: str,
+    id: str = Path(min_length=1, max_length=255),
     studentUpdate: schemas.StudentUpdate = Body(),
     db=Depends(deps.getDB),
 ):
@@ -161,7 +163,7 @@ async def putStudent(
 
 @r.delete("/student/{id}")
 async def deleteStudent(
-    id: str,
+    id: str = Path(min_length=1, max_length=255),
     db=Depends(deps.getDB),
 ):
     await student.remove(db, id=id)
@@ -190,7 +192,7 @@ async def postClass(
 
 @r.put("/class/{id}")
 async def putClass(
-    id: str,
+    id: int = Path(ge=1),
     classUpdate: schemas.ClassUpdate = Body(),
     db=Depends(deps.getDB),
 ):
@@ -199,7 +201,7 @@ async def putClass(
 
 @r.delete("/class/{id}")
 async def deleteClass(
-    id: str,
+    id: int = Path(ge=1),
     db=Depends(deps.getDB),
 ):
     await class_.remove(db, id=id)
@@ -228,7 +230,7 @@ async def postLesson(
 
 @r.put("/lesson/{id}")
 async def putLesson(
-    id: str,
+    id: int = Path(ge=1),
     lessonUpdate: schemas.LessonUpdate = Body(),
     db=Depends(deps.getDB),
 ):
@@ -237,7 +239,7 @@ async def putLesson(
 
 @r.delete("/lesson/{id}")
 async def deleteLesson(
-    id: str,
+    id: int = Path(ge=1),
     db=Depends(deps.getDB),
 ):
     await lesson.remove(db, id=id)
@@ -245,7 +247,7 @@ async def deleteLesson(
 
 @r.get("/lesson/{lesson_id}/class/list", response_model=List[schemas.Class])
 async def getLessonClassList(
-    lesson_id: str,
+    lesson_id: int = Path(ge=1),
     db=Depends(deps.getDB),
 ):
     return await class_.getMultiByLessonId(db, lesson_id)
@@ -253,8 +255,8 @@ async def getLessonClassList(
 
 @r.put("/lesson/{lesson_id}/class")
 async def putLessonClass(
-    lesson_id: str,
     class_ids: List[int],
+    lesson_id: int = Path(ge=1),
     db=Depends(deps.getDB),
 ):
     await classLessonRelation.updateLessonClasses(db, lesson_id, class_ids)

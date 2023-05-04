@@ -1,13 +1,13 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, conint, constr
 
 
 # Shared properties
 class LessonBase(BaseModel):
     thumbnail: str
-    title: str
-    teacher_id: str
-    year: int
-    term: int
+    title: constr(min_length=1, max_length=32)
+    teacher_id: constr(min_length=10, max_length=10)
+    year: conint(ge=1900, le=2100)
+    term: conint(ge=1, le=2)
     is_over: bool
 
 

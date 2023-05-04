@@ -14,6 +14,7 @@ from models.student import Student
 from models.task import Task
 from models.teacher import Teacher
 
+import ujson
 from sqlalchemy.ext.asyncio import AsyncSession
 from botocore.client import ClientError
 
@@ -49,6 +50,17 @@ async def initOSS(oss: any):
         await oss.head_bucket(Bucket="public")
     except ClientError:
         await oss.create_bucket(Bucket="public")
+        policy = {
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Sid": "AddPerm",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": ["s3:GetObject"],
+                "Resource": "arn:aws:s3:::public/*"
+            }]
+        }
+        await oss.put_bucket_policy(Bucket="public", Policy=ujson.dumps(policy))
 
     try:  # 若不存在则创建
         await oss.head_bucket(Bucket="cloud")

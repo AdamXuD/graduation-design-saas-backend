@@ -1,5 +1,5 @@
 import ujson
-from typing import Optional
+from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -9,7 +9,7 @@ from schemas.option import OptionCreate, OptionUpdate
 
 
 class CRUDOption(CRUDBase[Option, OptionCreate, OptionUpdate]):
-    async def getOptions(self, db: AsyncSession) -> list[Option]:
+    async def getOptions(self, db: AsyncSession) -> Optional[List[Option]]:
         query = select(
             Option
         )

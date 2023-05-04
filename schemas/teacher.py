@@ -1,10 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 
 
 # Shared properties
 class TeacherBase(BaseModel):
-    id: str
-    name: str
+    id: constr(min_length=10, max_length=10)
+    name: constr(min_length=1, max_length=16)
     phone: str
     email: str
     introduction: str
