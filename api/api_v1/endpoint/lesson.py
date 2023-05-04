@@ -184,7 +184,7 @@ async def putTask(
         raise HTTPException(
             status_code=403, detail="You are not the teacher of this lesson")
 
-    if not await task.isTeacherHasTask(db, user.id, lesson_id):
+    if not await task.isTeacherHasTask(db, user.id, task_id):
         raise HTTPException(
             status_code=403, detail="You don't have permission to edit this task")
 
@@ -207,7 +207,7 @@ async def putTaskStatusEnd(
         raise HTTPException(
             status_code=403, detail="You are not the teacher of this lesson")
 
-    if not await task.isTeacherHasTask(db, user.id, lesson_id):
+    if not await task.isTeacherHasTask(db, user.id, task_id):
         raise HTTPException(
             status_code=403, detail="You don't have permission to edit this task")
 
@@ -255,7 +255,7 @@ async def deleteTask(
         raise HTTPException(
             status_code=403, detail="You are not the teacher of this lesson")
 
-    if not await task.isTeacherHasTask(db, user.id, lesson_id):
+    if not await task.isTeacherHasTask(db, user.id, task_id):
         raise HTTPException(
             status_code=403, detail="You don't have permission to delete this task")
 
@@ -282,7 +282,7 @@ async def getTaskStatusChecking(
         raise HTTPException(
             status_code=403, detail="You are not the teacher of this lesson")
 
-    if not await task.isTeacherHasTask(db, user.id, lesson_id):
+    if not await task.isTeacherHasTask(db, user.id, task_id):
         raise HTTPException(
             status_code=403, detail="You don't have permission to check this task")
 

@@ -217,7 +217,7 @@ async def getCloudObject(
 
     if not (scope == area and user_id == user.id) and \
         not (area == "lesson" and scope == "student" and
-             await lesson.isClassHasLesson(db, user.class_id, user.class_id)) and \
+             await lesson.isClassHasLesson(db, user.class_id, user_id)) and \
             not (area == "lesson" and scope == "teacher" and
                  await lesson.isTeacherHasLesson(db, user.id, user_id)):
         raise HTTPException(
@@ -239,7 +239,7 @@ async def downloadCloudObject(
 
     if not (scope == area and user_id == user.id) and \
         not (area == "lesson" and scope == "student" and
-             await lesson.isClassHasLesson(db, user.class_id, user.class_id)) and \
+             await lesson.isClassHasLesson(db, user.class_id, user_id)) and \
             not (area == "lesson" and scope == "teacher" and
                  await lesson.isTeacherHasLesson(db, user.id, user_id)):
         raise HTTPException(
