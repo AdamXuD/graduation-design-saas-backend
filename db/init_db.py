@@ -46,25 +46,34 @@ async def initDatabase(db: AsyncSession) -> None:
 
 
 async def initOSS(oss: any):
-    try:  # 若不存在则创建
-        await oss.head_bucket(Bucket="public")
-    except ClientError:
+    res = await oss.list_buckets()
+    buckets = res.get("Buckets", [])
+    bucketNames = [bucket["Name"] for bucket in buckets]
+    if "public" not in bucketNames:
         await oss.create_bucket(Bucket="public")
         policy = {
             "Version": "2012-10-17",
-            "Statement": [{
-                "Sid": "AddPerm",
-                "Effect": "Allow",
-                "Principal": "*",
-                "Action": ["s3:GetObject"],
-                "Resource": "arn:aws:s3:::public/*"
-            }]
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": [
+                        "s3:GetBucketLocation",
+                        "s3:ListBucket"
+                    ],
+                    "Resource": "arn:aws:s3:::public"
+                },
+                {
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": ["s3:GetObject"],
+                    "Resource": ["arn:aws:s3:::public/*"]
+                }
+            ]
         }
         await oss.put_bucket_policy(Bucket="public", Policy=ujson.dumps(policy))
 
-    try:  # 若不存在则创建
-        await oss.head_bucket(Bucket="cloud")
-    except ClientError:
+    if "cloud" not in bucketNames:
         await oss.create_bucket(Bucket="cloud")
 
 
